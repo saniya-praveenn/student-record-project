@@ -13,8 +13,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
-// Confine all data file operations strictly inside the /data directory
-const DATA_DIR = path.resolve(__dirname, 'data');
+// Confine all data file operations strictly inside the configured data directory
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(__dirname, 'data');
 const DATA_FILE = path.resolve(DATA_DIR, 'students.json');
 const PUBLIC_DIR = path.resolve(__dirname, 'public');
 
@@ -37,8 +39,26 @@ app.use((err, req, res, next) => {
   return next(err);
 });
 
-// Serialize file write operations to prevent race conditions and file corruption
-let writeQueue = Promise.resolve();
+// Serialize file system read-modify-write operations to prevent race conditions
+let fileQueue = Promise.resolve();
+
+function withFileLock(fn) {
+  const result = fileQueue.then(() => fn());
+  fileQueue = result.catch(() => {});
+  return result;
+}
+
+/**
+ * Safely decodes a route parameter without throwing URIError on malformed percent sequences.
+ */
+function safeDecodeParam(value) {
+  const raw = typeof value === 'string' ? value : '';
+  try {
+    return decodeURIComponent(raw).trim();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Automatically creates the data/ directory and data/students.json file if missing.
@@ -72,21 +92,15 @@ async function readStudents() {
 /**
  * Atomically writes the student records array back to data/students.json.
  */
-function writeStudents(students) {
-  const task = writeQueue.then(async () => {
-    await ensureDataFile();
-    const tempFile = path.resolve(DATA_DIR, `students.json.tmp.${process.pid}.${Date.now()}`);
-    if (!tempFile.startsWith(DATA_DIR + path.sep)) {
-      throw new Error('Invalid temporary file path.');
-    }
-    const payload = JSON.stringify(students, null, 2) + '\n';
-    await fsp.writeFile(tempFile, payload, 'utf8');
-    await fsp.rename(tempFile, DATA_FILE);
-  });
-
-  // Keep queue alive even if a write fails
-  writeQueue = task.catch(() => {});
-  return task;
+async function writeStudents(students) {
+  await ensureDataFile();
+  const tempFile = path.resolve(DATA_DIR, `students.json.tmp.${process.pid}.${Date.now()}`);
+  if (!tempFile.startsWith(DATA_DIR + path.sep)) {
+    throw new Error('Invalid temporary file path.');
+  }
+  const payload = JSON.stringify(students, null, 2) + '\n';
+  await fsp.writeFile(tempFile, payload, 'utf8');
+  await fsp.rename(tempFile, DATA_FILE);
 }
 
 /**
@@ -138,17 +152,32 @@ function validateStudentPayload(body, { requireRollNumber = true } = {}) {
   }
 
   let marks = NaN;
-  if (body.marks === undefined || body.marks === null || body.marks === '') {
-    errors.marks = 'Marks are required.';
-  } else {
-    const parsedMarks = Number(body.marks);
-    if (!Number.isFinite(parsedMarks)) {
+  if (body.marks === undefined || body.marks === null || typeof body.marks === 'boolean') {
+    errors.marks = 'Marks are required and must be a valid number.';
+  } else if (typeof body.marks === 'string') {
+    const trimmedMarks = body.marks.trim();
+    if (!trimmedMarks) {
+      errors.marks = 'Marks are required.';
+    } else if (!/^-?\d+(\.\d+)?$/.test(trimmedMarks)) {
       errors.marks = 'Marks must be a valid number.';
-    } else if (parsedMarks < 0 || parsedMarks > 100) {
+    } else {
+      const parsedMarks = Number(trimmedMarks);
+      if (!Number.isFinite(parsedMarks) || parsedMarks < 0 || parsedMarks > 100) {
+        errors.marks = 'Marks must be between 0 and 100.';
+      } else {
+        marks = Math.round(parsedMarks * 100) / 100;
+      }
+    }
+  } else if (typeof body.marks === 'number') {
+    if (!Number.isFinite(body.marks)) {
+      errors.marks = 'Marks must be a valid number.';
+    } else if (body.marks < 0 || body.marks > 100) {
       errors.marks = 'Marks must be between 0 and 100.';
     } else {
-      marks = Math.round(parsedMarks * 100) / 100;
+      marks = Math.round(body.marks * 100) / 100;
     }
+  } else {
+    errors.marks = 'Marks must be a valid number.';
   }
 
   if (Object.keys(errors).length > 0) {
@@ -204,6 +233,24 @@ function computeStats(students) {
 
 // -------------------- REST API ROUTES --------------------
 
+// Health check endpoint for Render deployment monitoring
+app.get('/api/health', async (req, res) => {
+  try {
+    await ensureDataFile();
+    return res.json({
+      status: 'ok',
+      service: 'student-record-management-system',
+      storageReady: true,
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return res.status(500).json({
+      status: 'error',
+      storageReady: false,
+    });
+  }
+});
+
 // 1. Display All Students (with optional search/department query)
 app.get('/api/students', async (req, res) => {
   try {
@@ -245,11 +292,11 @@ app.get('/api/students', async (req, res) => {
 // 2. Search Student by Roll Number
 app.get('/api/students/:rollNumber', async (req, res) => {
   try {
-    const targetRoll = decodeURIComponent(req.params.rollNumber || '').trim();
+    const targetRoll = safeDecodeParam(req.params.rollNumber);
     if (!targetRoll) {
       return res.status(400).json({
         success: false,
-        message: 'Roll number parameter is required.',
+        message: 'Valid roll number parameter is required.',
       });
     }
 
@@ -291,12 +338,32 @@ app.post('/api/students', async (req, res) => {
     }
 
     const { rollNumber, name, department, marks } = validation.data;
-    const students = await readStudents();
 
-    const duplicate = students.find(
-      (s) => s.rollNumber.toLowerCase() === rollNumber.toLowerCase()
-    );
-    if (duplicate) {
+    const outcome = await withFileLock(async () => {
+      const students = await readStudents();
+      const duplicate = students.find(
+        (s) => s.rollNumber.toLowerCase() === rollNumber.toLowerCase()
+      );
+      if (duplicate) {
+        return { conflict: true };
+      }
+
+      const now = new Date().toISOString();
+      const newStudent = {
+        rollNumber,
+        name,
+        department,
+        marks,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      students.push(newStudent);
+      await writeStudents(students);
+      return { conflict: false, student: newStudent };
+    });
+
+    if (outcome.conflict) {
       return res.status(409).json({
         success: false,
         message: `Roll number "${rollNumber}" already exists. Roll numbers must be unique.`,
@@ -304,23 +371,10 @@ app.post('/api/students', async (req, res) => {
       });
     }
 
-    const now = new Date().toISOString();
-    const newStudent = {
-      rollNumber,
-      name,
-      department,
-      marks,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    students.push(newStudent);
-    await writeStudents(students);
-
     return res.status(201).json({
       success: true,
       message: `Student "${name}" (Roll No: ${rollNumber}) added successfully.`,
-      student: newStudent,
+      student: outcome.student,
     });
   } catch (error) {
     console.error('Error adding student:', error);
@@ -334,11 +388,11 @@ app.post('/api/students', async (req, res) => {
 // 4. Modify Student by Roll Number
 app.put('/api/students/:rollNumber', async (req, res) => {
   try {
-    const targetRoll = decodeURIComponent(req.params.rollNumber || '').trim();
+    const targetRoll = safeDecodeParam(req.params.rollNumber);
     if (!targetRoll) {
       return res.status(400).json({
         success: false,
-        message: 'Roll number parameter is required.',
+        message: 'Valid roll number parameter is required.',
       });
     }
 
@@ -351,34 +405,41 @@ app.put('/api/students/:rollNumber', async (req, res) => {
       });
     }
 
-    const students = await readStudents();
-    const index = students.findIndex(
-      (s) => s.rollNumber.toLowerCase() === targetRoll.toLowerCase()
-    );
+    const outcome = await withFileLock(async () => {
+      const students = await readStudents();
+      const index = students.findIndex(
+        (s) => s.rollNumber.toLowerCase() === targetRoll.toLowerCase()
+      );
 
-    if (index === -1) {
+      if (index === -1) {
+        return { notFound: true };
+      }
+
+      const existing = students[index];
+      const updatedStudent = {
+        ...existing,
+        name: validation.data.name,
+        department: validation.data.department,
+        marks: validation.data.marks,
+        updatedAt: new Date().toISOString(),
+      };
+
+      students[index] = updatedStudent;
+      await writeStudents(students);
+      return { notFound: false, student: updatedStudent };
+    });
+
+    if (outcome.notFound) {
       return res.status(404).json({
         success: false,
         message: `No student found with roll number "${targetRoll}".`,
       });
     }
 
-    const existing = students[index];
-    const updatedStudent = {
-      ...existing,
-      name: validation.data.name,
-      department: validation.data.department,
-      marks: validation.data.marks,
-      updatedAt: new Date().toISOString(),
-    };
-
-    students[index] = updatedStudent;
-    await writeStudents(students);
-
     return res.json({
       success: true,
-      message: `Student "${updatedStudent.name}" (Roll No: ${updatedStudent.rollNumber}) updated successfully.`,
-      student: updatedStudent,
+      message: `Student "${outcome.student.name}" (Roll No: ${outcome.student.rollNumber}) updated successfully.`,
+      student: outcome.student,
     });
   } catch (error) {
     console.error('Error updating student:', error);
@@ -392,33 +453,40 @@ app.put('/api/students/:rollNumber', async (req, res) => {
 // 5. Delete Student by Roll Number
 app.delete('/api/students/:rollNumber', async (req, res) => {
   try {
-    const targetRoll = decodeURIComponent(req.params.rollNumber || '').trim();
+    const targetRoll = safeDecodeParam(req.params.rollNumber);
     if (!targetRoll) {
       return res.status(400).json({
         success: false,
-        message: 'Roll number parameter is required.',
+        message: 'Valid roll number parameter is required.',
       });
     }
 
-    const students = await readStudents();
-    const index = students.findIndex(
-      (s) => s.rollNumber.toLowerCase() === targetRoll.toLowerCase()
-    );
+    const outcome = await withFileLock(async () => {
+      const students = await readStudents();
+      const index = students.findIndex(
+        (s) => s.rollNumber.toLowerCase() === targetRoll.toLowerCase()
+      );
 
-    if (index === -1) {
+      if (index === -1) {
+        return { notFound: true };
+      }
+
+      const [removed] = students.splice(index, 1);
+      await writeStudents(students);
+      return { notFound: false, student: removed };
+    });
+
+    if (outcome.notFound) {
       return res.status(404).json({
         success: false,
         message: `No student found with roll number "${targetRoll}".`,
       });
     }
 
-    const [removed] = students.splice(index, 1);
-    await writeStudents(students);
-
     return res.json({
       success: true,
-      message: `Student "${removed.name}" (Roll No: ${removed.rollNumber}) deleted successfully.`,
-      student: removed,
+      message: `Student "${outcome.student.name}" (Roll No: ${outcome.student.rollNumber}) deleted successfully.`,
+      student: outcome.student,
     });
   } catch (error) {
     console.error('Error deleting student:', error);

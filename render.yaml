@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: student-record-management-system
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Persistent Storage Option (requires paid Render plan):
+      # 1. Uncomment the 'disk' block below and change 'plan' from free to starter.
+      # 2. Uncomment DATA_DIR below so students.json is saved on the persistent disk.
+      # - key: DATA_DIR
+      #   value: /var/data
+    # disk:
+    #   name: student-records-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

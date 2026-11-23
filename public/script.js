@@ -255,11 +255,13 @@
       renderDashboard();
       populateDepartmentFilter();
       renderStudentsTable();
+      return true;
     } catch (error) {
       if (!silent) {
         showToast(error.message || 'Failed to load student records.', 'error');
       }
       renderStudentsTable();
+      return false;
     } finally {
       state.loading = false;
     }
@@ -654,6 +656,8 @@
 
     if (marks === '' || marks === null || marks === undefined) {
       errors.marks = 'Marks are required.';
+    } else if (!/^-?\d+(\.\d+)?$/.test(String(marks).trim())) {
+      errors.marks = 'Marks must be a valid number between 0 and 100.';
     } else {
       const num = Number(marks);
       if (!Number.isFinite(num) || num < 0 || num > 100) {
@@ -1067,8 +1071,10 @@
   emptyAddBtn.addEventListener('click', () => switchView('add'));
 
   refreshDataBtn.addEventListener('click', async () => {
-    await loadAllStudents();
-    showToast('Records synchronized from data/students.json.', 'success');
+    const ok = await loadAllStudents();
+    if (ok) {
+      showToast('Records synchronized from data/students.json.', 'success');
+    }
   });
 
   openSidebarBtn.addEventListener('click', openMobileSidebar);

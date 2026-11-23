@@ -1202,11 +1202,16 @@ body {
   }
 
   .topbar {
-    padding: 0 16px;
+    padding: 0 14px;
+    gap: 10px;
   }
 
   .topbar-breadcrumb {
     font-size: 13px;
+  }
+
+  #refreshDataBtn {
+    padding: 8px 10px;
   }
 
   #refreshDataBtn span {
