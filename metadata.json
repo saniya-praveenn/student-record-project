@@ -1,0 +1,6 @@
+{
+  "name": "Student Record Management System",
+  "description": "Operating System Mini Project — File-based Student Record Management System using Node.js, Express, and JSON storage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

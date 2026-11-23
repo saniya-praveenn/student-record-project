@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Record Management System — Operating System Mini Project</title>
+    <meta
+      name="description"
+      content="Operating System Mini Project — File-based Student Record Management System built with Node.js, Express, and JSON file storage."
+    />
+    <meta property="og:title" content="Student Record Management System" />
+    <meta
+      property="og:description"
+      content="Operating System Mini Project — File-based Student Record Management System using Node.js, Express, and JSON storage."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Mobile Backdrop -->
+      <div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
+
+      <!-- Left Sidebar Navigation -->
+      <aside id="sidebar" class="sidebar" aria-label="Primary Navigation">
+        <div class="sidebar-header">
+          <div class="brand-lockup">
+            <div class="brand-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+              </svg>
+            </div>
+            <div class="brand-text">
+              <span class="brand-title">Student Records</span>
+              <span class="brand-subtitle">OS Mini Project</span>
+            </div>
+          </div>
+          <button
+            id="closeSidebarBtn"
+            class="icon-btn sidebar-close-btn"
+            type="button"
+            aria-label="Close navigation menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="sidebar-nav">
+          <p class="nav-group-label">Registry Menu</p>
+          <ul class="nav-list">
+            <li>
+              <button type="button" class="nav-item active" data-view="dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="9" rx="1" />
+                  <rect x="14" y="3" width="7" height="5" rx="1" />
+                  <rect x="14" y="12" width="7" height="9" rx="1" />
+                  <rect x="3" y="16" width="7" height="5" rx="1" />
+                </svg>
+                <span>Dashboard</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-item" data-view="add">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="19" y1="8" x2="19" y2="14" />
+                  <line x1="22" y1="11" x2="16" y2="11" />
+                </svg>
+                <span>Add Student</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-item" data-view="all">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>All Students</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-item" data-view="search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span>Search Student</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-item" data-view="modify">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span>Modify Student</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="nav-item" data-view="delete">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+                <span>Delete Student</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+          <p class="storage-label">File System Store</p>
+          <p class="storage-path">data/students.json</p>
+          <p class="storage-note">Node.js fs persistent storage</p>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
+      <div class="workspace">
+        <!-- Top Header Bar -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button
+              id="openSidebarBtn"
+              class="icon-btn mobile-menu-btn"
+              type="button"
+              aria-label="Open navigation menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div class="topbar-title-group">
+              <span class="topbar-breadcrumb">Student Record Management System / <span id="topbarBreadcrumb">Dashboard</span></span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <button id="refreshDataBtn" type="button" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              <span>Refresh</span>
+            </button>
+            <button id="topbarAddBtn" type="button" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>Add Student</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+          <!-- VIEW 1: DASHBOARD -->
+          <section id="view-dashboard" class="view-section active" aria-labelledby="dashboardHeading">
+            <div class="page-header">
+              <div>
+                <h1 id="dashboardHeading" class="page-title">Student Record Management System</h1>
+                <p class="page-subtitle">Operating System Mini Project — File-based Academic Record Management</p>
+              </div>
+            </div>
+
+            <!-- 4-Column KPI Strip -->
+            <div class="kpi-strip" role="region" aria-label="Student Registry Summary">
+              <div class="kpi-cell">
+                <span class="kpi-label">Total Students</span>
+                <span id="kpiTotalStudents" class="kpi-value tabular-nums">0</span>
+                <span class="kpi-meta">Stored in data/students.json</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-label">Average Marks</span>
+                <span id="kpiAverageMarks" class="kpi-value tabular-nums">—</span>
+                <span class="kpi-meta">Out of 100 marks</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-label">Highest Marks</span>
+                <span id="kpiHighestMarks" class="kpi-value tabular-nums">—</span>
+                <span class="kpi-meta">Top recorded score</span>
+              </div>
+              <div class="kpi-cell">
+                <span class="kpi-label">Departments</span>
+                <span id="kpiDepartments" class="kpi-value tabular-nums">0</span>
+                <span class="kpi-meta">Distinct academic branches</span>
+              </div>
+            </div>
+
+            <div class="dashboard-grid">
+              <!-- Available Operations -->
+              <div class="panel">
+                <div class="panel-header">
+                  <div>
+                    <h2 class="panel-title">Available Operations</h2>
+                    <p class="panel-description">Select an operation to manage student records stored on disk.</p>
+                  </div>
+                </div>
+                <div class="operations-list">
+                  <button type="button" class="operation-row" data-goto="add">
+                    <div class="operation-info">
+                      <span class="operation-name">01. Add Student Record</span>
+                      <span class="operation-desc">Register a new student with unique roll number, name, department, and marks.</span>
+                    </div>
+                    <span class="operation-action">Open</span>
+                  </button>
+                  <button type="button" class="operation-row" data-goto="search">
+                    <div class="operation-info">
+                      <span class="operation-name">02. Search Student by Roll Number</span>
+                      <span class="operation-desc">Look up complete details of a student directly from JSON file storage.</span>
+                    </div>
+                    <span class="operation-action">Open</span>
+                  </button>
+                  <button type="button" class="operation-row" data-goto="all">
+                    <div class="operation-info">
+                      <span class="operation-name">03. Display All Students</span>
+                      <span class="operation-desc">Browse, filter, and sort the complete student directory table.</span>
+                    </div>
+                    <span class="operation-action">Open</span>
+                  </button>
+                  <button type="button" class="operation-row" data-goto="modify">
+                    <div class="operation-info">
+                      <span class="operation-name">04. Modify Student Record</span>
+                      <span class="operation-desc">Search by roll number and update student name, department, or marks.</span>
+                    </div>
+                    <span class="operation-action">Open</span>
+                  </button>
+                  <button type="button" class="operation-row" data-goto="delete">
+                    <div class="operation-info">
+                      <span class="operation-name">05. Delete Student Record</span>
+                      <span class="operation-desc">Remove an existing student record by roll number after confirmation.</span>
+                    </div>
+                    <span class="operation-action">Open</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Recent Records + File System Overview -->
+              <div class="dashboard-side">
+                <div class="panel">
+                  <div class="panel-header panel-header-split">
+                    <div>
+                      <h2 class="panel-title">Recent Records</h2>
+                      <p class="panel-description">Latest entries saved in file storage.</p>
+                    </div>
+                    <button type="button" class="text-link-btn" data-goto="all">View All</button>
+                  </div>
+                  <div id="dashboardRecentContainer" class="recent-container">
+                    <!-- Populated dynamically by script.js -->
+                  </div>
+                </div>
+
+                <div class="panel">
+                  <div class="panel-header">
+                    <div>
+                      <h2 class="panel-title">File System Storage Design</h2>
+                      <p class="panel-description">OS practical implementation overview</p>
+                    </div>
+                  </div>
+                  <div class="architecture-list">
+                    <div class="arch-row">
+                      <span class="arch-key">Storage File</span>
+                      <span class="arch-val mono">data/students.json</span>
+                    </div>
+                    <div class="arch-row">
+                      <span class="arch-key">Directory Init</span>
+                      <span class="arch-val">Auto-creates missing folder &amp; JSON file on boot</span>
+                    </div>
+                    <div class="arch-row">
+                      <span class="arch-key">Write Safety</span>
+                      <span class="arch-val">Queued atomic rename via Node.js <code class="inline-code">fs/promises</code></span>
+                    </div>
+                    <div class="arch-row">
+                      <span class="arch-key">Primary Key</span>
+                      <span class="arch-val">Unique Roll Number validation</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 2: ADD STUDENT -->
+          <section id="view-add" class="view-section" aria-labelledby="addHeading" hidden>
+            <div class="page-header">
+              <div>
+                <h1 id="addHeading" class="page-title">Add Student</h1>
+                <p class="page-subtitle">Enter student details below. Roll number must be unique.</p>
+              </div>
+            </div>
+
+            <div class="panel form-panel">
+              <form id="addStudentForm" novalidate>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label for="addRollNumber" class="field-label">
+                      Roll Number <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="addRollNumber"
+                      name="rollNumber"
+                      type="text"
+                      class="field-input mono"
+                      placeholder="e.g. 27600124005 or CS101"
+                      autocomplete="off"
+                      maxlength="32"
+                      required
+                    />
+                    <span class="field-hint">Letters, numbers, hyphens, underscores, or slashes. Must be unique.</span>
+                    <span id="addRollError" class="field-error" role="alert"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="addName" class="field-label">
+                      Student Name <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="addName"
+                      name="name"
+                      type="text"
+                      class="field-input"
+                      placeholder="e.g. Aditya Pratap Singh"
+                      autocomplete="off"
+                      maxlength="80"
+                      required
+                    />
+                    <span class="field-hint">Full name of the student (2 to 80 characters).</span>
+                    <span id="addNameError" class="field-error" role="alert"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="addDepartmentSelect" class="field-label">
+                      Department <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <select id="addDepartmentSelect" name="departmentSelect" class="field-input" required>
+                      <option value="">Select Department</option>
+                      <option value="Computer Science & Engineering">Computer Science &amp; Engineering (CSE)</option>
+                      <option value="Information Technology">Information Technology (IT)</option>
+                      <option value="Electronics & Communication">Electronics &amp; Communication (ECE)</option>
+                      <option value="Electrical Engineering">Electrical Engineering (EE)</option>
+                      <option value="Mechanical Engineering">Mechanical Engineering (ME)</option>
+                      <option value="Civil Engineering">Civil Engineering (CE)</option>
+                      <option value="Artificial Intelligence & ML">Artificial Intelligence &amp; ML (AIML)</option>
+                      <option value="Data Science">Data Science (DS)</option>
+                      <option value="__other__">Other Department...</option>
+                    </select>
+                    <input
+                      id="addDepartmentCustom"
+                      name="departmentCustom"
+                      type="text"
+                      class="field-input mt-2"
+                      placeholder="Enter department name"
+                      maxlength="60"
+                      hidden
+                    />
+                    <span id="addDepartmentError" class="field-error" role="alert"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="addMarks" class="field-label">
+                      Marks (0 – 100) <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="addMarks"
+                      name="marks"
+                      type="number"
+                      class="field-input mono"
+                      placeholder="e.g. 88.5"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      required
+                    />
+                    <span class="field-hint">Numeric score between 0 and 100.</span>
+                    <span id="addMarksError" class="field-error" role="alert"></span>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button id="addSubmitBtn" type="submit" class="btn btn-primary">Add Student</button>
+                  <button id="addResetBtn" type="button" class="btn btn-secondary">Clear Form</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- VIEW 3: ALL STUDENTS -->
+          <section id="view-all" class="view-section" aria-labelledby="allHeading" hidden>
+            <div class="page-header page-header-split">
+              <div>
+                <h1 id="allHeading" class="page-title">All Students</h1>
+                <p class="page-subtitle">
+                  Total Records: <strong id="allTotalCount" class="tabular-nums">0</strong>
+                  <span aria-hidden="true"> · </span>
+                  <span id="allFilteredCountText">Showing 0 students</span>
+                </p>
+              </div>
+              <button type="button" class="btn btn-primary" data-goto="add">Add New Student</button>
+            </div>
+
+            <div class="panel">
+              <div class="table-toolbar">
+                <div class="toolbar-search">
+                  <label for="tableSearchInput" class="sr-only">Filter students</label>
+                  <input
+                    id="tableSearchInput"
+                    type="search"
+                    class="field-input"
+                    placeholder="Filter by roll number, name, or department..."
+                  />
+                </div>
+                <div class="toolbar-filters">
+                  <label for="tableDeptFilter" class="sr-only">Filter by department</label>
+                  <select id="tableDeptFilter" class="field-input">
+                    <option value="all">All Departments</option>
+                  </select>
+                  <label for="tableSortSelect" class="sr-only">Sort students</label>
+                  <select id="tableSortSelect" class="field-input">
+                    <option value="newest">Sort: Recently Added</option>
+                    <option value="roll-asc">Sort: Roll Number (A–Z)</option>
+                    <option value="name-asc">Sort: Name (A–Z)</option>
+                    <option value="marks-desc">Sort: Marks (High–Low)</option>
+                    <option value="marks-asc">Sort: Marks (Low–High)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div id="studentsTableWrapper" class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Roll Number</th>
+                      <th scope="col">Student Name</th>
+                      <th scope="col">Department</th>
+                      <th scope="col" class="num-col">Marks</th>
+                      <th scope="col">Standing</th>
+                      <th scope="col" class="actions-col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="studentsTableBody">
+                    <!-- Rows rendered dynamically by script.js -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div id="studentsEmptyState" class="empty-state" hidden>
+                <p id="studentsEmptyTitle" class="empty-title">No student records found</p>
+                <p id="studentsEmptyDesc" class="empty-desc">
+                  The file data/students.json currently has no records. Add your first student to begin.
+                </p>
+                <button id="emptyAddBtn" type="button" class="btn btn-primary">Add First Student</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 4: SEARCH STUDENT -->
+          <section id="view-search" class="view-section" aria-labelledby="searchHeading" hidden>
+            <div class="page-header">
+              <div>
+                <h1 id="searchHeading" class="page-title">Search Student</h1>
+                <p class="page-subtitle">Search student records using their unique roll number.</p>
+              </div>
+            </div>
+
+            <div class="panel form-panel">
+              <form id="searchStudentForm" class="lookup-form" novalidate>
+                <div class="lookup-row">
+                  <div class="lookup-input-wrap">
+                    <label for="searchRollInput" class="field-label">Roll Number</label>
+                    <input
+                      id="searchRollInput"
+                      type="text"
+                      class="field-input mono"
+                      placeholder="Enter exact roll number (e.g. 27600124005)"
+                      autocomplete="off"
+                      required
+                    />
+                  </div>
+                  <div class="lookup-buttons">
+                    <button id="searchSubmitBtn" type="submit" class="btn btn-primary">Search</button>
+                    <button id="searchClearBtn" type="button" class="btn btn-secondary">Clear</button>
+                  </div>
+                </div>
+              </form>
+
+              <div id="searchResultContainer" class="result-container" hidden></div>
+              <div id="searchNotFound" class="inline-notice inline-notice-warning" hidden>
+                <p id="searchNotFoundText">No student record matched the entered roll number.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- VIEW 5: MODIFY STUDENT -->
+          <section id="view-modify" class="view-section" aria-labelledby="modifyHeading" hidden>
+            <div class="page-header">
+              <div>
+                <h1 id="modifyHeading" class="page-title">Modify Student</h1>
+                <p class="page-subtitle">Search a student by roll number to update their name, department, or marks.</p>
+              </div>
+            </div>
+
+            <div class="panel form-panel">
+              <form id="modifyLookupForm" class="lookup-form" novalidate>
+                <div class="lookup-row">
+                  <div class="lookup-input-wrap">
+                    <label for="modifyLookupRoll" class="field-label">Find Student by Roll Number</label>
+                    <input
+                      id="modifyLookupRoll"
+                      type="text"
+                      class="field-input mono"
+                      placeholder="Enter roll number to load record"
+                      autocomplete="off"
+                      required
+                    />
+                  </div>
+                  <div class="lookup-buttons">
+                    <button id="modifyLookupBtn" type="submit" class="btn btn-primary">Load Student</button>
+                    <button id="modifyLookupClearBtn" type="button" class="btn btn-secondary">Reset</button>
+                  </div>
+                </div>
+              </form>
+
+              <div id="modifyNotFound" class="inline-notice inline-notice-warning" hidden>
+                <p id="modifyNotFoundText">No student record found with that roll number.</p>
+              </div>
+
+              <form id="modifyStudentForm" class="modify-edit-form" hidden novalidate>
+                <div class="form-divider"></div>
+                <h2 class="section-subhead">Edit Student Information</h2>
+                <div class="form-grid">
+                  <div class="form-field">
+                    <label for="modifyRollNumber" class="field-label">Roll Number (Read-Only)</label>
+                    <input
+                      id="modifyRollNumber"
+                      type="text"
+                      class="field-input mono"
+                      readonly
+                      disabled
+                    />
+                    <span class="field-hint">Roll number is the unique identifier and cannot be changed.</span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="modifyName" class="field-label">
+                      Student Name <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="modifyName"
+                      name="name"
+                      type="text"
+                      class="field-input"
+                      maxlength="80"
+                      required
+                    />
+                    <span id="modifyNameError" class="field-error" role="alert"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="modifyDepartmentSelect" class="field-label">
+                      Department <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <select id="modifyDepartmentSelect" name="departmentSelect" class="field-input" required>
+                      <option value="">Select Department</option>
+                      <option value="Computer Science & Engineering">Computer Science &amp; Engineering (CSE)</option>
+                      <option value="Information Technology">Information Technology (IT)</option>
+                      <option value="Electronics & Communication">Electronics &amp; Communication (ECE)</option>
+                      <option value="Electrical Engineering">Electrical Engineering (EE)</option>
+                      <option value="Mechanical Engineering">Mechanical Engineering (ME)</option>
+                      <option value="Civil Engineering">Civil Engineering (CE)</option>
+                      <option value="Artificial Intelligence & ML">Artificial Intelligence &amp; ML (AIML)</option>
+                      <option value="Data Science">Data Science (DS)</option>
+                      <option value="__other__">Other Department...</option>
+                    </select>
+                    <input
+                      id="modifyDepartmentCustom"
+                      name="departmentCustom"
+                      type="text"
+                      class="field-input mt-2"
+                      placeholder="Enter department name"
+                      maxlength="60"
+                      hidden
+                    />
+                    <span id="modifyDepartmentError" class="field-error" role="alert"></span>
+                  </div>
+
+                  <div class="form-field">
+                    <label for="modifyMarks" class="field-label">
+                      Marks (0 – 100) <span class="required-mark" aria-hidden="true">*</span>
+                    </label>
+                    <input
+                      id="modifyMarks"
+                      name="marks"
+                      type="number"
+                      class="field-input mono"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      required
+                    />
+                    <span id="modifyMarksError" class="field-error" role="alert"></span>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button id="modifySubmitBtn" type="submit" class="btn btn-primary">Save Changes</button>
+                  <button id="modifyCancelBtn" type="button" class="btn btn-secondary">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- VIEW 6: DELETE STUDENT -->
+          <section id="view-delete" class="view-section" aria-labelledby="deleteHeading" hidden>
+            <div class="page-header">
+              <div>
+                <h1 id="deleteHeading" class="page-title">Delete Student</h1>
+                <p class="page-subtitle">Look up a student by roll number and confirm before deleting the record.</p>
+              </div>
+            </div>
+
+            <div class="panel form-panel">
+              <form id="deleteLookupForm" class="lookup-form" novalidate>
+                <div class="lookup-row">
+                  <div class="lookup-input-wrap">
+                    <label for="deleteLookupRoll" class="field-label">Roll Number</label>
+                    <input
+                      id="deleteLookupRoll"
+                      type="text"
+                      class="field-input mono"
+                      placeholder="Enter roll number to delete"
+                      autocomplete="off"
+                      required
+                    />
+                  </div>
+                  <div class="lookup-buttons">
+                    <button id="deleteLookupBtn" type="submit" class="btn btn-primary">Find Student</button>
+                    <button id="deleteLookupClearBtn" type="button" class="btn btn-secondary">Clear</button>
+                  </div>
+                </div>
+              </form>
+
+              <div id="deleteNotFound" class="inline-notice inline-notice-warning" hidden>
+                <p id="deleteNotFoundText">No student record found with that roll number.</p>
+              </div>
+
+              <div id="deletePreviewContainer" class="result-container" hidden></div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Accessible Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="confirmModalTitle" class="modal-title">Confirm Record Deletion</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirmModalMessage" class="modal-message">
+            Are you sure you want to permanently delete this student record from data/students.json?
+          </p>
+          <div id="confirmModalSummary" class="modal-summary"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="confirmCancelBtn" type="button" class="btn btn-secondary">Cancel</button>
+          <button id="confirmDeleteBtn" type="button" class="btn btn-danger">Confirm Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="/script.js" defer></script>
+  </body>
+</html>
